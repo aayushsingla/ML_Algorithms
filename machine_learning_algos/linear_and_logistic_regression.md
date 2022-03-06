@@ -1,5 +1,3 @@
-<!-- TODO  -->
-
 # Linear and Logistic Regression
 
 Part of: <https://github.com/aayushsingla/ML_Algorithms>
