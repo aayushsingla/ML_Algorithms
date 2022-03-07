@@ -15,6 +15,7 @@
     -   [Implementation of K-Means Algorithm from scratch](#implementation-of-k-means-algorithm-from-scratch)
     -   [Challenges with K-Means Algorithm and K-Means++ algorithm](#challenges-with-k-means-algorithm-and-k-means-algorithm)
     -   [How to choose the right value of K ie. number of clusters?](#how-to-choose-the-right-value-of-k-ie-number-of-clusters)
+    -   [Advantages and disadvantages of K-Means](#advantages-and-disadvantages-of-k-means)
     -   [Applications of Clustering in Real-World Scenarios](#applications-of-clustering-in-real-world-scenarios)
     -   [Interview questions](#interview-questions)
     -   [What can we improve here?](#what-can-we-improve-here)
@@ -65,14 +66,16 @@ There are a lot of evaluation metrics which are designed to evaluate K-Means. So
     We want to maximise the Dunn Index to achieve good clusters. The intution behind Dunn's index is pretty simple. We want to maximise inter cluster distance or numerator, hence, increasing the Dunn's index overall. We want to minimise the intracluster distance ie. our largest intracluster distance or denominator should be small, in turn, maximising the Dunn's index. **Thus, higher the Dunn's index, better our clusters will be.**
 
 -   **Entropy**: Entropy is used as an **external validation measure by using the class labels** of data as external information. It is a measure of the purity of the cluster with respect to the given class label. Thus, if each cluster consists of objects with a single class label, the entropy value is 0. As the objects in a cluster become more diverse, the entropy value increases. It is defined as:  
-    ![Entropy](./images/2022/03/entropy_clusters.png)  
-where p_{ij} is the probability of assigning an object of class i to cluster j, and the sum is taken over all classes.
+        ![Entropy](./images/entropy_clusters.png)  
+    where p\_{ij} is the probability of assigning an object of class i to cluster j, and the sum is taken over all classes.
 
     **Note:** Using entropy measure to validate the class labels tends to favor k-means which produce clusters in relatively uniform size. This effect is more significant in the situation that the data have highly imbalanced true clusters. **So, using entropy measure for validating k-means clustering can lead to the results being misleading.**
 
--   **Silhouette Coefficient**: Silhouette Coefficient or silhouette score is another metric used to calculate the goodness of a clustering technique. Its value ranges from -1 to 1. 1 means clusters are well apart from each other and clearly distinguished. 0 means clusters are indifferent, or we can say that the distance between clusters is not significant. -1 means clusters are assigned in the wrong way. Silhouette coefficient is a function of average intra-cluster distance (a) and average inter-cluster distance (b) and is defined as:
+-   **Silhouette Coefficient**: Silhouette Coefficient or silhouette score is another metric used to calculate the goodness of a clustering technique. Its value ranges from -1 to 1. 1 means clusters are well apart from each other and clearly distinguished. 0 means clusters are indifferent, or we can say that the distance between clusters is not significant. -1 means clusters are assigned in the wrong way. The Silhouette Value measures how similar a point is to its own cluster (cohesion) compared to other clusters (separation). It is a function of average intra-cluster distance (a) and average inter-cluster distance (b) and is defined as:
 
         silhouette score = (b-a)/max(a, b)
+
+     **The intution behind silhouette score is that average distance between a point and other clusters ie. b should be more than the average distance of the point from the points of its clusters ie. a**. A score of 0.7 to 0.8 is considered good for most cases. However, this might vary from dataset to dataset.
 
 Overall, the two most popular metrics evaluation metrics for clustering algorithms are the **Silhouette coefficient and Dunn's Index**.
 
@@ -80,13 +83,15 @@ Overall, the two most popular metrics evaluation metrics for clustering algorith
 
 **Step 1:** Choose the number of clusters K.  
 **Step 2:** Select K random points from the data as centroids.  
-**Step 3:** Assign all the points to the closest cluster centroid.  
+**Step 3:** Assign all the points to the closest cluster based on squared euclidean distances from centroid.  
 **Step 4:** Recompute the centroids of newly formed clusters.  
 **Step 5:** Repeat step 3 and 4 until one or all of the following conditions satisfy:   
 
 -   Centroids of newly formed clusters do not change
 -   Points remain in the same cluster ie. no change in cluster disribution (Convergence).
 -   Maximum number of iterations are reached
+
+**K means algorithm does not optimize distances but squared deviations from the mean. This is also equivalent to minimizing within-cluster variance.**
 
 #### Data preparation for K-Means Algorithm
 
@@ -121,8 +126,7 @@ Using K-Means++ to initialize the centroids tends to improve the clusters. Altho
 
 K is the most important hyperparameter for K-Means clustering algorithm and the performance of the algorithm can fairly increase or decreased based on this value. There are many methods to choose K and some of them are listed below:
 
--   **Elbow method:** This is the method used for choosing K in KNN and same can be applied here. However, instead of plotting error (we can't compute error here due to unavailability of labels) against K, we plot an evaluation metric (like Intertia or Dunn Method) against K. From the graph obtained, we try to choose the best K from the trend we obtained. Increase in computation cost is one another factor that is considered while choosing K from the graph (only in cases, when the gain in performance w.r.t K is very less).
--   
+-   **Elbow method:** This is the method used for choosing K in KNN and same can be applied here. However, instead of plotting error (we can't compute error here due to unavailability of labels) against K, we plot an evaluation metric (like Intertia or Dunn Method or Silhouette Coefficient) against K. From the graph obtained, we try to choose the best K from the trend we obtained. Increase in computation cost is one another factor that is considered while choosing K from the graph (only in cases, when the gain in performance w.r.t K is very less).
 
 #### Advantages and disadvantages of K-Means
 
@@ -147,7 +151,7 @@ K is the most important hyperparameter for K-Means clustering algorithm and the 
 **A.**  
 1. Hierarchical Clustering is a computationally expensive algorithm compared to K-Means clustering. It has a TC of O(n3d) where as K-means has an TC of O(n.k.d.i). Its memory consumption is quadratic where as K-means has linear memory consumption.
 2. **K-Means algorithm is extremely limited in applicability. It is limited to Euclidean distances and generally, gives poor results when used with other algorithms. Also, it only works on numerical data.** However, hierarchical clustering does not even require distances (any measure can be used, including similarity function simply by preferring high values to low values). It can use any type of data including categorical, strings, time series, or mixed.
-3. K-Means fixes K before it starts to work whereas, HAC doesnot need it.
+3. K-Means fixes number of clusters before it starts to work whereas, HAC doesnot need it.
 
 <!-- ----------------------------------------------------------------------------------------------- -->
 
@@ -160,9 +164,21 @@ K is the most important hyperparameter for K-Means clustering algorithm and the 
 <!-- ----------------------------------------------------------------------------------------------- -->
 
 **Q. Why does K-means clustering algorithm use only Euclidean distance metric?**
-**A.** K-means minimizes within-cluster variance. Now if you look at the definition of variance, it is identical to the sum of squared Euclidean distances from the center. The basic idea of k-means is to minimize squared errors. There is no "distance" involved here.
+**A.** K-means minimizes within-cluster variance. Now if you look at the definition of variance, it is identical to the sum of squared Euclidean distances from the center. The basic idea of k-means is to minimize squared error. There is no "distance" involved here.
 
 <!-- [TODO] -->
+
+<!-- ----------------------------------------------------------------------------------------------- -->
+
+**Q.** What is the difference between K-Means and K-Medians and when would you use one over another?
+**A.**
+
+L2 normalization can be useful when you want to force learned embeddings to lie on a sphere or something like that, but I'm not sure this function is intended for use in a data preprocessing scenario like you describe.
+
+<!-- ----------------------------------------------------------------------------------------------- -->
+
+**Q.** How would you perform k-Means on very large datasets?
+**A.** If the dataset is large, an alternative is using **Mini-batch K-Means**. Mini batch k-means has the main advantage of reducing the computational cost of finding a partition. This cost is proportional to the size of the sample batch used and this difference is more evident when the number of clusters is larger. **The main idea of mini-batch k-Means is to use small random batches of data of a fixed size, so they can be stored in memory. Each iteration a new random sample from the dataset is obtained and used to update the clusters and this is repeated until convergence.**
 
 <!-- ----------------------------------------------------------------------------------------------- -->
 
@@ -172,10 +188,11 @@ K is the most important hyperparameter for K-Means clustering algorithm and the 
 
 -   Add more deatils on clustering evaluation metrics/explain existing ones.
 -   Try to discuss imbalanced dataset through out the article.
+-   Rewrite entropy part in evaluation metrics.
 
 #### References
 
 1.  [Rajat Gupta ML Notes](https://ml-notes-rajatgupta.notion.site/)
 2.  [Analytics Vidhya - comprehensive guide K means clustering](https://www.analyticsvidhya.com/blog/2019/08/comprehensive-guide-k-means-clustering/)
-3. [Silhouette Coefficient](https://towardsdatascience.com/silhouette-coefficient-validating-clustering-techniques-e976bb81d10c)
-4. [ML stack cafe - K means clustering interview questions](https://www.mlstack.cafe/blog/k-means-clustering-interview-questions)
+3.  [Silhouette Coefficient](https://towardsdatascience.com/silhouette-coefficient-validating-clustering-techniques-e976bb81d10c)
+4.  [ML stack cafe - K means clustering interview questions](https://www.mlstack.cafe/blog/k-means-clustering-interview-questions)
