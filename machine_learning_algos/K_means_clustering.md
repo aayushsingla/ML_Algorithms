@@ -102,9 +102,72 @@ Overall, the two most popular metrics evaluation metrics for clustering algorith
 #### Implementation of K-Means Algorithm from scratch
 
 ```python
-class K_MEANS:
-    def __init__(self):
-      pass
+  import numpy as np
+
+  class K_MEANS:
+
+      def __init__(self, K, iterations=100):
+          self.K = K
+          self.n_iter = iterations      # total number of iterations
+          self.variance_history = []    # array for storing variance vs iterations
+                                        # shape -> (n_iterations, 1)
+
+      def calculate_variance(self, cluster):
+          # compute squared euclidean distance between
+          # centroid and other points return the mean.
+          centroid = np.mean(cluster, keepdims=True)
+          variance = 0
+
+          for data_point in cluster:
+              variance += self.calculate_squared_euclidean_distance(data_point, centroid)
+
+          return variance / len(cluster)
+
+      def calculate_squared_euclidean_distance(self, point, centroid):
+          # squared euclidean distance
+          return np.sum(np.square(point - centroid))
+
+      def k_means_clustering(self, data, centroids=None, curr_iter=0):
+
+          if curr_iter == self.n_iter:
+              return centroids
+
+          if centroids is None:
+              # pick any K points as centroids randomly for the first iteration.
+              centroids = np.random.choice(data, self.K, replace=False)
+
+          # clusters[i] -> points belonging to that cluster
+          clusters = [[] for _ in centroids]
+
+          for d in data:
+              # init var
+              min_dist_index = -1
+              min_dist = float('inf')
+
+              # compute distance of each point from all the centers
+              # and find the centroid with minimum distance
+              for i, c in enumerate(centroids):
+                  dist = self.calculate_squared_euclidean_distance(d, c)
+                  if dist < min_dist:
+                      min_dist = dist
+                      min_dist_index = i
+
+              # Assign the data point to the nearest centroid
+              clusters[i].append(d)
+
+          # recompute center/centroid for each cluster.
+          recomputed_centroids = []
+          for c in clusters:
+              recomputed_centroids.append(np.mean(c, keepdims=True))
+
+          # compute mean variance for each cluster
+          mean_variance = []
+          for c in centroids:
+              mean_variance.append(self.calculate_variance(c))
+
+          self.variance_history.append(np.mean(mean_variance))
+
+          return self.k_means_clustering(data, recomputed_centroids, curr_iter + 1)
 ```
 
 #### Challenges with K-Means Algorithm and K-Means++ algorithm
@@ -120,7 +183,7 @@ To solve this problem of random initialization, we will use an algoirthm called 
 **Step 3:** Choose the farthest point from any of the clusters as the new centroid.  
 **Step 4:** Repeat step 2 and 3 until all K clusters are choosen.  
 
-Using K-Means++ to initialize the centroids tends to improve the clusters. Although it is computationally costly relative to random initialization, subsequent K-Means often converge more rapidly.
+Using K-Means++ to initialize the centroids tends to improve the clusters. Although it is computationally costly relative to random initialization, subsequent K-Means often converge more rapidly. This problem of initialisation in K-means that determines its overall performance is also known as **initialization sensitivity.**
 
 #### How to choose the right value of K ie. number of clusters?
 
@@ -129,6 +192,23 @@ K is the most important hyperparameter for K-Means clustering algorithm and the 
 -   **Elbow method:** This is the method used for choosing K in KNN and same can be applied here. However, instead of plotting error (we can't compute error here due to unavailability of labels) against K, we plot an evaluation metric (like Intertia or Dunn Method or Silhouette Coefficient) against K. From the graph obtained, we try to choose the best K from the trend we obtained. Increase in computation cost is one another factor that is considered while choosing K from the graph (only in cases, when the gain in performance w.r.t K is very less).
 
 #### Advantages and disadvantages of K-Means
+
+**Advantages:**
+
+-   Easy to understand and implement.
+-   **Guaranteed convergence**.
+-   Computationally efficient for both training and prediction.
+
+**Disadvantages:**  
+
+-   **Depends on K:** Forcefully partitions into K clusters, and so an appropriate K needs to be figured out.
+-   **Depends on cluster initializations:** General implementations of K-Means try to converge to local optimum solutions which is why it’s important to run it for a sufficient number of iterations and minimize goodness metrics like Inertia.
+-   **Doesn’t capture uncertainty in cluster assignments:** If I run K-Means 100 times, how often would two data points be clustered together. K-Means doesn’t capture this.
+-   **Cannot separate non-convex clusters:** K-Means partitions data into convex sets and so is unable to properly cluster non-convex sets. **In Euclidean space, an object is convex if for every pair of points within the object, every point on the straight line segment that joins them is also within the object.** An example of two convex sets is shown in this [image](https://pafnuty.files.wordpress.com/2013/08/banana_shape.png). When we try to use k-means on this example, it doesn’t do very well. There’s just no way to form these two clusters with two little circular paper cut-outs. Or three. This [image](https://pafnuty.files.wordpress.com/2013/08/pure_kmeans.png) shows how the final results look.
+-   **Forms spherical clusters**: By the nature of distance metric that is generally chosen i.e. Euclidean distance, clusters formed are spherical in nature. However, it’s not necessary that data points are in that sense and can be in any shape.
+-   **Cluster labels aren’t interpretable:** It’s important to note that cluster labels in themselves don’t make sense (so I could have a point clustered in Cluster Label 1 in one iteration and clustered in Label 2 in the next iteration), what makes sense is how often two data points are clustered together. Also, in order to understand what these clusters represent, further exploratory analysis needs to be done.
+
+One can also try running K-Means a number of times and based on cluster labels check how often two data points occur together, and accordingly cluster points. This is one approach to doing **ensemble clustering**.
 
 #### Applications of Clustering in Real-World Scenarios
 
@@ -142,43 +222,56 @@ K is the most important hyperparameter for K-Means clustering algorithm and the 
 <!-- ----------------------------------------------------------------------------------------------- -->
 
 **Q.** What is space and time complexity of the K-Means Algorithm?  
-**A.** **Time complexity:** The standard implementation has a time complexity of **O(ndkt)** where **n** is number of samples in dataset, **d** is dimensionality of features, **k** is number of clusters and **t** is number of iterations the trainig needs to be runned for.  
+**A.** **Time complexity:** The standard implementation using Lloyd's algorithm has a time complexity of **O(ndkt)** where **n** is number of samples in dataset, **d** is dimensionality of features, **k** is number of clusters and **t** is number of iterations the trainig needs to be runned for.  
 **Space complexity**: O(N)
 
 <!-- ----------------------------------------------------------------------------------------------- -->
 
 **Q.** Compare Hierarchical Clustering and K-Means Clustering?  
 **A.**  
-1. Hierarchical Clustering is a computationally expensive algorithm compared to K-Means clustering. It has a TC of O(n3d) where as K-means has an TC of O(n.k.d.i). Its memory consumption is quadratic where as K-means has linear memory consumption.
-2. **K-Means algorithm is extremely limited in applicability. It is limited to Euclidean distances and generally, gives poor results when used with other algorithms. Also, it only works on numerical data.** However, hierarchical clustering does not even require distances (any measure can be used, including similarity function simply by preferring high values to low values). It can use any type of data including categorical, strings, time series, or mixed.
-3. K-Means fixes number of clusters before it starts to work whereas, HAC doesnot need it.
+
+-   Hierarchical Clustering is a computationally expensive algorithm compared to K-Means clustering. It has a TC of O(n3d) where as K-means has an TC of O(n.k.d.i). Its memory consumption is quadratic where as K-means has linear memory consumption.
+-   **K-Means algorithm is extremely limited in applicability. It is limited to Euclidean distances and generally, gives poor results when used with other algorithms. Also, it only works on numerical data.** However, hierarchical clustering does not even require distances (any measure can be used, including similarity function simply by preferring high values to low values). It can use any type of data including categorical, strings, time series, or mixed.
+-   K-Means fixes number of clusters before it starts to work whereas, HAC doesnot need it.
 
 <!-- ----------------------------------------------------------------------------------------------- -->
 
 **Q.** Explain some cases where k-Means clustering fails to give good results?  
 **A.**  
-1. K-means has trouble clustering data where clusters are of **various sizes and densities**.
-2. **Outliers** will cause the centroids to be dragged, or the outliers might get their own cluster instead of being ignored. Outliers should be clipped or removed before clustering.
-3. If the number of **dimensions increase**, a distance-based similarity measure converges to a constant value between any given examples. Dimensions should be reduced before clustering them.
+
+-   K-means has trouble clustering data where clusters are of **various sizes and densities**.
+-   **Outliers** will cause the centroids to be dragged, or the outliers might get their own cluster instead of being ignored. Outliers should be clipped or removed before clustering.
+-   If the number of **dimensions increase**, a distance-based similarity measure converges to a constant value between any given examples. Dimensions should be reduced before clustering them.
 
 <!-- ----------------------------------------------------------------------------------------------- -->
 
 **Q. Why does K-means clustering algorithm use only Euclidean distance metric?**
-**A.** K-means minimizes within-cluster variance. Now if you look at the definition of variance, it is identical to the sum of squared Euclidean distances from the center. The basic idea of k-means is to minimize squared error. There is no "distance" involved here.
-
-<!-- [TODO] -->
+**A.** K-means minimizes within-cluster variance. Now if you look at the definition of variance, it is identical to the sum of squared Euclidean distances from the center. The basic idea of k-means is to minimize squared error. It does not optimize distances but squared deviations from the mean. There is no "distance" involved here.
 
 <!-- ----------------------------------------------------------------------------------------------- -->
 
-**Q.** What is the difference between K-Means and K-Medians and when would you use one over another?
-**A.**
+**Q.** What is the difference between K-Means and K-Medians and when would you use one over another?  
+**A.** **K-Means minimizes within-cluster variance**, which equals squared Euclidean distances. In general, the arithmetic mean does this. **It does not optimize distances but squared deviations from the mean**. **K-Medians minimizes absolute deviations**, which equals Manhattan distance. In general, the per-axis median should do this. It is a good estimator for the mean if you want to minimize the sum of absolute deviations (that is sum_i abs(x_i-y_i)), instead of the squared ones.
+
+To decide between k-means and k-medians, take into consideration the following:
+- If the distance is squared Euclidean distance, use k-means.
+- If the distance is Taxicab metric, use k-medians.
+- If there is any other distance, use **k-medoids**.
+
+There is an exception which is:
+Maximizing cosine similarity is related to minimizing the squared Euclidean distance on the L2-normalized data. So, if the data is L2 normalized, and it is L2-normalized each iteration, then k-means can be used.
 
 L2 normalization can be useful when you want to force learned embeddings to lie on a sphere or something like that, but I'm not sure this function is intended for use in a data preprocessing scenario like you describe.
 
 <!-- ----------------------------------------------------------------------------------------------- -->
 
-**Q.** How would you perform k-Means on very large datasets?
+**Q.** How would you perform k-Means on very large datasets?  
 **A.** If the dataset is large, an alternative is using **Mini-batch K-Means**. Mini batch k-means has the main advantage of reducing the computational cost of finding a partition. This cost is proportional to the size of the sample batch used and this difference is more evident when the number of clusters is larger. **The main idea of mini-batch k-Means is to use small random batches of data of a fixed size, so they can be stored in memory. Each iteration a new random sample from the dataset is obtained and used to update the clusters and this is repeated until convergence.**
+
+<!-- ----------------------------------------------------------------------------------------------- -->
+
+**Q.** Why K-Means doesnot work well with convex clusters? How can we fix it?  
+**A.** The K-means algorithm, in its basic form, is like making little circular paper cutouts in 2D space (because it uses euclidean distance metric) and using them to cover the data points. We can change the quantity and size and position of our paper cut-outs, but they are still round and, thus, these non-convex shapes evade us. In Euclidean space, an object is convex if for every pair of points within the object, every point on the straight line segment that joins them is also within the object. **By combining k-means with another algorithm, hierarchical clustering, we can solve this problem of non-convex sets.** First, we cluster the data into a large number of clusters using k-means. Then, we take these many clusters from k-means and then start clustering them together into bigger clusters using a single-link agglomerative method. Here is how final results look like: [Results](https://pafnuty.files.wordpress.com/2013/08/clustering_animation_01.gif?w=830)
 
 <!-- ----------------------------------------------------------------------------------------------- -->
 
@@ -189,6 +282,9 @@ L2 normalization can be useful when you want to force learned embeddings to lie 
 -   Add more deatils on clustering evaluation metrics/explain existing ones.
 -   Try to discuss imbalanced dataset through out the article.
 -   Rewrite entropy part in evaluation metrics.
+-   K-medoids
+-   K-means using cosine similarity
+-   Improve the answer to K-means vs K-medians in interview questions.
 
 #### References
 
@@ -196,3 +292,4 @@ L2 normalization can be useful when you want to force learned embeddings to lie 
 2.  [Analytics Vidhya - comprehensive guide K means clustering](https://www.analyticsvidhya.com/blog/2019/08/comprehensive-guide-k-means-clustering/)
 3.  [Silhouette Coefficient](https://towardsdatascience.com/silhouette-coefficient-validating-clustering-techniques-e976bb81d10c)
 4.  [ML stack cafe - K means clustering interview questions](https://www.mlstack.cafe/blog/k-means-clustering-interview-questions)
+5.  [pafnuty.blog](https://pafnuty.wordpress.com/2013/08/14/non-convex-sets-with-k-means-and-hierarchical-clustering/)
